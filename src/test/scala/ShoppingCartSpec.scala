@@ -34,6 +34,13 @@ class ShoppingCartSpec extends AnyFreeSpec with Matchers {
           PricedItem(Item("cornflakes"), Price("5.00")) -> Quantity(5)
         ).subtotal mustBe Price("25.00")
       }
+      "with multiple items, should be equal to their subtotals summed together" in {
+        ShoppingCart(
+          PricedItem(Item("cornflakes"), Price("5.00")) -> Quantity(5),
+          PricedItem(Item("frosties"), Price("2.50")) -> Quantity(1),
+          PricedItem(Item("weetabix"), Price("2.50")) -> Quantity(3),
+        ).subtotal mustBe Price("35.00")
+      }
     }
   }
 
