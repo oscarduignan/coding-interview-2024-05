@@ -13,6 +13,7 @@ case class PricedItem(item: Item, price: Price)
 case class Quantity(value: BigDecimal)
 
 case class ShoppingCart(items: Map[PricedItem, Quantity]) {
+  require(items.values.forall(_.value > 0), "negative quantities aren't allowed")
   def subtotal: Price = Price(items.map {
     case (item, quantity) => item.price.value * quantity.value
   }.sum)
@@ -25,6 +26,15 @@ object ShoppingCart {
 class ShoppingCartSpec extends AnyFreeSpec with Matchers {
 
   "ShoppingCart" - {
+    "not allow negative quantities" - {
+      "should throw if instantiated with a negative quantity" in {
+        an[IllegalArgumentException] must be thrownBy {
+          ShoppingCart(
+            PricedItem(Item("cornflakes"), Price("5.00")) -> Quantity(-1)
+          )
+        }
+      }
+    }
     "subtotal" - {
       "with no items, should be 0" in {
         ShoppingCart().subtotal mustBe Price(0)
