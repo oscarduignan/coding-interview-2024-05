@@ -25,7 +25,7 @@ case class ShoppingCart private (items: Map[PricedItem, Quantity]) {
   def taxPayable(implicit taxRate: TaxRate): Price = subtotal.taxPayable
   def totalPayable(implicit taxRate: TaxRate): Price = Price(subtotal.value + subtotal.taxPayable.value)
   def add(item: PricedItem, quantity: Quantity): ShoppingCart = {
-    this.copy(items = Quantity(items.get(item).map(_.value).getOrElse(BigDecimal(0)) + quantity.value) match {
+    this.copy(items = items.get(item).map(existing => Quantity(existing.value + quantity.value)).getOrElse(quantity) match {
       case newQuantity if newQuantity.value > 0 => items.updated(item, newQuantity)
       case _ => items.removed(item)
     })
