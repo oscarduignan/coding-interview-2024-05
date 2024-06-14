@@ -32,6 +32,43 @@ case class ShoppingCart private (items: Map[PricedItem, Quantity]) {
       }
     )
   }
+  def remove(item: Item, quantity: Quantity): ShoppingCart = {
+    /* can work it through, but on the spot being observed :oof: */
+    val pricedItemsToUpdate = items.toList.filter(_._1.item == item).sortBy(_._1.price.value).reverse
+
+    this.copy(
+      items = pricedItemsToUpdate
+        .foldLeft((items, quantity.value)) {
+          case ((_items, leftToRemove), (pricedItem, itemQuantity)) => {
+            val remainingItems = itemQuantity.value - leftToRemove
+            if (remainingItems > 0)
+              (_items.updated(pricedItem, Quantity(remainingItems)), 0)
+            else
+              (_items.removed(pricedItem), remainingItems.abs)
+          }
+        }
+        ._1
+    )
+  }
+
+  /* me psuedocoding it out...
+
+    pricedItemsToUpdate =
+      items to list
+      filter matching our item
+      sortBy item price with most expensive first
+    this.copy(
+      items = (pricedItemsToUpdate.foldLeft((items, quantity.value)) {
+        case ((updatedItems, leftToRemove), (pricedItem, itemQuantity))) => {
+          val remainingItems = itemQuantity.value - leftToRemove.value
+          if (remainingItems > 0)
+            (items.updated(pricedItem, Quantity(remainingItems)), 0)
+          else
+            (items.removed(pricedItem), remainingItems.abs)
+        }
+      })._1
+    )
+   */
 }
 object ShoppingCart {
   def apply(): ShoppingCart                                 = ShoppingCart(Map.empty[PricedItem, Quantity])
@@ -144,6 +181,27 @@ class ShoppingCartSpec extends AnyFreeSpec with Matchers {
 
         cart.items mustBe Map(
           PricedItem(Item("frosties"), Price("2.50")) -> Quantity(1)
+        )
+      }
+    }
+    "remove" - {
+      "when item exists, should be removed" in {
+        ShoppingCart(
+          Map(
+            PricedItem(Item("cornflakes"), Price("5.00")) -> Quantity(5)
+          )
+        ).remove(Item("cornflakes"), Quantity(2)).items mustBe Map(
+          PricedItem(Item("cornflakes"), Price("5.00")) -> Quantity(3)
+        )
+      }
+      "when more than one of the same item exists with different prices, remove most expensive first" in {
+        ShoppingCart(
+          Map(
+            PricedItem(Item("cornflakes"), Price("5.00")) -> Quantity(5),
+            PricedItem(Item("cornflakes"), Price("2.00")) -> Quantity(5)
+          )
+        ).remove(Item("cornflakes"), Quantity(7)).items mustBe Map(
+          PricedItem(Item("cornflakes"), Price("2.00")) -> Quantity(3)
         )
       }
     }
